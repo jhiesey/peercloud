@@ -9,22 +9,26 @@ var FILES = [
 ''
 ];
 
-var MATCH_PATH = /\/sandbox\/([a-fA-F0-9]{40})(?:\/([^\?]*))?(?:\?|$)/;
-
-self.addEventListener('install', function (event) {
+function storeStatic () {
 	var requests = FILES.map(function (path) {
 		return new Request('/' + path);
 	});
 	var responses = requests.map(function (request) {
 		return fetch(request);
 	});
-	event.waitUntil(caches.open(OFFLINE_STORAGE).then(function (cache) {
+	return caches.open(OFFLINE_STORAGE).then(function (cache) {
 		return Promise.all(responses.map(function (response, i) {
 			return response.then(function (responseVal) {
 				return cache.put(requests[i], responseVal);
-			})
+			});
 		}));
-	}));
+	});
+}
+
+var MATCH_PATH = /\/sandbox\/([a-fA-F0-9]{40})(?:\/([^\?]*))?(?:\?|$)/;
+
+self.addEventListener('install', function (event) {
+	event.waitUntil(storeStatic());
 });
 
 self.addEventListener('fetch', function (event) {
@@ -53,6 +57,12 @@ self.addEventListener('fetch', function (event) {
 			event.respondWith(caches.match(event.request).then(function (response) {
 				return response || fetch(event.request);
 			}));
+			// Update the stored copy of the site after we load the main page
+			if (event.request.url === self.location.protocol + '//' + self.location.host + '/') {
+				storeStatic().catch(function (err) {
+					console.warn('Failed to update site');
+				});
+			}
 		}
  	}
 });
