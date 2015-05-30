@@ -6,6 +6,7 @@ var FILES = [
 'bundle.js',
 'main.css',
 'service-worker.js',
+'fakecookie.js',
 ''
 ];
 
@@ -48,7 +49,7 @@ self.addEventListener('fetch', function (event) {
 							headers: {
 								'Content-Type': response.mime,
 								'Content-Length': response.body.byteLength,
-								'Content-Security-Policy': 'sandbox allow-scripts'
+								'Content-Security-Policy': 'sandbox allow-scripts allow-popups'
 							}
 						}));
 					}
