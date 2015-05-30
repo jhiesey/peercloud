@@ -1,0 +1,58 @@
+{
+  "name": "peercloud",
+  "description": "Serverless websites via WebTorrent",
+  "version": "1.0.0",
+  "author": {
+    "name": "John Hiesey",
+    "email": "john@hiesey.com",
+    "url": "http://hiesey.com/"
+  },
+  "bugs": {
+    "url": "https://github.com/jhiesey/peercloud/issues"
+  },
+  "dependencies": {
+    "compression": "^1.0.9",
+    "debug": "^2.0.0",
+    "express": "^4.8.5",
+    "jade": "^1.5.0",
+    "mime": "^1.3.4",
+    "simple-peer": "^5.3.0",
+    "thunky": "^0.1.0",
+    "twilio": "^2.1.0",
+    "webtorrent": "0.x",
+    "xhr": "^2.0.0"
+  },
+  "devDependencies": {
+    "browserify": "^10.0.0",
+    "nib": "^1.0.3",
+    "nodemon": "^1.2.1",
+    "standard": "^3.1.1",
+    "stylus": "^0.51.0",
+    "watchify": "^3.1.0"
+  },
+  "homepage": "https://peercloud.io",
+  "keywords": [
+    "p2p",
+    "webrtc",
+    "data channel"
+  ],
+  "license": "MIT",
+  "main": "index.js",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/jhiesey/peercloud.git"
+  },
+  "scripts": {
+    "build": "mkdir -p static && npm run build-css && npm run build-js",
+    "build-css": "stylus -u nib css/main.styl -o static/ -c",
+    "build-js": "browserify client > static/bundle.js",
+    "secret-download": "rsync -a -O -v --delete hiesey.com:\"/home/jhiesey/www/peercloud.io/secret/\" secret/",
+    "secret-upload": "rsync -a -O -v --delete secret/ hiesey.com:/home/jhiesey/www/peercloud.io/secret/",
+    "start": "node server",
+    "test": "standard",
+    "watch": "npm run watch-css & npm run watch-js & DEBUG=peercloud* nodemon server -e js,jade -d 1",
+    "watch-css": "stylus -u nib css/main.styl -o static/ -w",
+    "watch-js": "watchify client -o static/bundle.js -dv"
+  }
+}
