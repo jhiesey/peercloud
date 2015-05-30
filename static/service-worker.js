@@ -47,7 +47,8 @@ self.addEventListener('fetch', function (event) {
 							status: 200,
 							headers: {
 								'Content-Type': response.mime,
-								'Content-Length': response.body.byteLength
+								'Content-Length': response.body.byteLength,
+								'Content-Security-Policy': 'sandbox allow-scripts'
 							}
 						}));
 					}

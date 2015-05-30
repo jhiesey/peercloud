@@ -139,16 +139,15 @@ navigator.serviceWorker.register('/service-worker.js').then(function (registrati
 
 var MATCH_PATH = /#\/?([a-fA-F0-9]{40})(?:\/(.*))?$/;
 
+var iframe = null;
 function loadPage () {
 	var matches = MATCH_PATH.exec(location.hash);
 	if (matches) {
 		var hash = matches[1];
 		var path = matches[2] || 'index.html';
-		var iframe = document.createElement('iframe');
+		iframe = document.createElement('iframe');
 		iframe.src = '/sandbox/' + hash + '/' + path;
 		iframe.width = iframe.height = '100%';
-		iframe.sandbox = 'allow-scripts allow-same-origin';
-		iframe.frameBorder = 0;
 		document.body.appendChild(iframe);
 	} else {
 		document.querySelector('.hide-intro').classList.remove('hide-intro');
