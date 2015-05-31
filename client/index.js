@@ -14,6 +14,11 @@ if (!Peer.WEBRTC_SUPPORT || !navigator.serviceWorker) {
 	return;
 }
 
+// TODO: just replace iframe
+window.addEventListener('hashchange', function () {
+	location.reload();
+});
+
 /*
 indexed by infoHash
 {
