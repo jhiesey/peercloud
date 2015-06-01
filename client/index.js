@@ -14,9 +14,12 @@ if (!Peer.WEBRTC_SUPPORT || !navigator.serviceWorker) {
 	return;
 }
 
-// TODO: just replace iframe
 window.addEventListener('hashchange', function () {
-	location.reload();
+	// If the worker is created, it's safe to create/update the iframe.
+	// If it isn't yet created, the correct thing will be loaded once it is anyway
+	if (worker) {
+		loadPage();
+	}
 });
 
 /*
@@ -145,17 +148,26 @@ navigator.serviceWorker.register('/service-worker.js').then(function (registrati
 var MATCH_PATH = /#\/?([a-fA-F0-9]{40})(?:\/(.*))?$/;
 
 var iframe = null;
+// Loads the correct content
 function loadPage () {
+	var mainDiv = document.getElementById('main-content');
 	var matches = MATCH_PATH.exec(location.hash);
 	if (matches) {
 		var hash = matches[1];
 		var path = matches[2] || 'index.html';
-		iframe = document.createElement('iframe');
+		if (!iframe) {
+			iframe = document.createElement('iframe');
+			iframe.width = iframe.height = '100%';
+			document.body.appendChild(iframe);
+		}
 		iframe.src = '/sandbox/' + hash + '/' + path;
-		iframe.width = iframe.height = '100%';
-		document.body.appendChild(iframe);
+		mainDiv.classList.add('hide-intro');
 	} else {
-		document.querySelector('.hide-intro').classList.remove('hide-intro');
+		if (iframe) {
+			document.body.removeChild(iframe);
+			iframe = null;
+		}
+		mainDiv.classList.remove('hide-intro');
 	}
 }
 
