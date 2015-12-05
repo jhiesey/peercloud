@@ -28,6 +28,8 @@ function storeStatic () {
 
 var MATCH_PATH = /\/sandbox\/([a-fA-F0-9]{40})(?:\/([^\?]*))?(?:\?|$)/
 
+var HEARTBEAT_TIMEOUT = 10 // seconds
+
 self.addEventListener('install', function (event) {
 	event.waitUntil(storeStatic())
 })
@@ -69,8 +71,8 @@ self.addEventListener('fetch', function (event) {
  	}
 })
 
-// contain page id, port, requests
-var pipes = []
+// Indexed by page id, contains page id, port, requests
+var pipes = {}
 var outstandingRequests = {}
 
 function fetchFromTorrent (hash, path, cb) {
@@ -88,28 +90,38 @@ function fetchFromTorrent (hash, path, cb) {
 }
 
 function setPipe (pageId, port) {
-	for (var i = 0; i < pipes.length; i++) {
-		var pipe = pipes[i]
-		if (pipe.pageId === pageId) {
-			pipes.splice(i, 1)
-			// resend messages
-			Object.keys(outstandingRequests).forEach(function (id) {
-				var request = outstandingRequests[id]
-				if (request.requestedPage === pageId) {
-					request.requestedPage = null
-				}
-			})
-			sendOutstanding()
-			break
-		}
-	}
-	if (port) {
-		pipes.push({
-			pageId: pageId,
-			port:port
+	if (pipes[pageId]) {
+		clearTimeout(pipes[pageId].timeout)
+		delete pipes[pageId]
+		// resend messages
+		Object.keys(outstandingRequests).forEach(function (id) {
+			var request = outstandingRequests[id]
+			if (request.requestedPage === pageId) {
+				request.requestedPage = null
+			}
 		})
 		sendOutstanding()
 	}
+
+	if (port) {
+		pipes[pageId] = {
+			pageId: pageId,
+			port:port,
+		}
+		resetTimer(pageId)
+		sendOutstanding()
+	}
+}
+
+function resetTimer(pageId) {
+	var pipe = pipes[pageId]
+	if (!pipe)
+		return
+
+	clearTimeout(pipe.timeout)
+	pipe.timeout = setTimeout(function () {
+		setPipe(pageId, null)
+	}, HEARTBEAT_TIMEOUT * 1000)
 }
 
 self.addEventListener('message', function (event) {
@@ -132,6 +144,9 @@ self.addEventListener('message', function (event) {
 		case 'unload':
 			setPipe(data.pageId, null)
 			break
+		case 'heartbeat':
+			resetTimer(data.pageId)
+			break
 		default:
 			console.warn('Unexpected message:', event.data)
 			break
@@ -139,7 +154,7 @@ self.addEventListener('message', function (event) {
 })
 
 function sendOutstanding() {
-	var pipe = pipes[0]
+	var pipe = pipes[Object.keys(pipes)[0]]
 	if (pipe) {
 		Object.keys(outstandingRequests).forEach(function (id) {
 			var request = outstandingRequests[id]

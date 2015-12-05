@@ -108,6 +108,15 @@ window.addEventListener('unload', function () {
 	});
 });
 
+var HEARTBEAT_RESET_TIME = 5 // seconds
+
+setInterval(function () {
+	messageWorker({
+		type: 'heartbeat',
+		pageId: pageId
+	})
+}, HEARTBEAT_RESET_TIME * 1000)
+
 var worker = null
 navigator.serviceWorker.register('/service-worker.js').then(function (registration) {
 	if (!registration.active) {
