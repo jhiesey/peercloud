@@ -14,12 +14,24 @@ if (!Peer.WEBRTC_SUPPORT || !navigator.serviceWorker) {
 	return;
 }
 
-window.addEventListener('hashchange', function () {
-	// If the worker is created, it's safe to create/update the iframe.
-	// If it isn't yet created, the correct thing will be loaded once it is anyway
-	if (worker) {
-		loadPage();
+var locationField = document.getElementById('location')
+var goButton = document.getElementById('go-button')
+
+goButton.addEventListener('click', function () {
+	loadPage(locationField.value)
+})
+
+function syncLocation (firstLoad) {
+	if (location.hash) {
+		locationField.value = location.hash.substr(1)
+	} else if (!firstLoad) {
+		locationField.value = ''
 	}
+}
+syncLocation(true)
+
+window.addEventListener('hashchange', function () {
+	syncLocation()
 });
 
 /*
@@ -96,18 +108,18 @@ window.addEventListener('unload', function () {
 	});
 });
 
-var worker = null;
+var worker = null
 navigator.serviceWorker.register('/service-worker.js').then(function (registration) {
 	if (!registration.active) {
 		// Refresh to activate the worker
-		location.reload();
-		return;
+		location.reload()
+		return
 	}
-	worker = registration.active;
+	worker = registration.active
 
-	var messageChannel = new MessageChannel();
+	var messageChannel = new MessageChannel()
 	messageChannel.port1.onmessage = function(event) {
-		var data = event.data;
+		var data = event.data
 		switch(data.type) {
 			case 'fetch':
 				fetchFile(data.hash, data.path, function (err, buffer) {
@@ -116,58 +128,50 @@ navigator.serviceWorker.register('/service-worker.js').then(function (registrati
 						hash: data.hash,
 						path: data.path,
 						err: null
-					};
+					}
 					if (!err) {
 						msg.response = {
 							body: buffer,
 							mime: mime.lookup(data.path)
-						};
+						}
 					} else {
-						msg.err = err.message;
+						msg.err = err.message
 					}
-					messageWorker(msg);
+					messageWorker(msg)
 				});
-				break;
+				break
 			default:
 				console.log('Unexpected message from service worker:', data);
-				break;
+				break
 		}
 	};
 
 	messageWorker({
 		type: 'returnpipe',
 		pageId: pageId
-	}, [messageChannel.port2]);
+	}, [messageChannel.port2])
 
-	loadPage();
+	goButton.disabled = false
 }).catch(function (err) {
-	console.error('service worker failed');
-	console.error(err);
+	console.error('service worker failed')
+	console.error(err)
 });
 
-var MATCH_PATH = /#\/?([a-fA-F0-9]{40})(?:\/(.*))?$/;
+var MATCH_PATH = /\/?([a-fA-F0-9]{40})(?:\/(.*))?$/
 
-var iframe = null;
 // Loads the correct content
-function loadPage () {
-	var mainDiv = document.getElementById('main-content');
-	var matches = MATCH_PATH.exec(location.hash);
+function loadPage (loc) {
+	var matches = MATCH_PATH.exec(loc)
 	if (matches) {
-		var hash = matches[1];
-		var path = matches[2] || 'index.html';
-		if (!iframe) {
-			iframe = document.createElement('iframe');
-			iframe.width = iframe.height = '100%';
-			document.body.appendChild(iframe);
-		}
-		iframe.src = '/sandbox/' + hash + '/' + path;
-		mainDiv.classList.add('hide-intro');
+		var hash = matches[1]
+		var path = matches[2] || 'index.html'
+		var a = document.createElement('a')
+		a.target = '_blank'
+		a.href = '/sandbox/' + hash + '/' + path
+		a.click()
 	} else {
-		if (iframe) {
-			document.body.removeChild(iframe);
-			iframe = null;
-		}
-		mainDiv.classList.remove('hide-intro');
+		console.log(loc)
+		alert('The location must start with a 40-character hash')
 	}
 }
 

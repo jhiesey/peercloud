@@ -1,5 +1,5 @@
 var compress = require('compression')
-var debug = require('debug')('instant')
+var debug = require('debug')('peercloud')
 var express = require('express')
 var http = require('http')
 var jade = require('jade')
