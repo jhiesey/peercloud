@@ -8,41 +8,41 @@ var FILES = [
 'service-worker.js',
 'fakecookie.js',
 ''
-];
+]
 
 function storeStatic () {
 	var requests = FILES.map(function (path) {
-		return new Request('/' + path);
-	});
+		return new Request('/' + path)
+	})
 	var responses = requests.map(function (request) {
-		return fetch(request);
-	});
+		return fetch(request)
+	})
 	return caches.open(OFFLINE_STORAGE).then(function (cache) {
 		return Promise.all(responses.map(function (response, i) {
 			return response.then(function (responseVal) {
-				return cache.put(requests[i], responseVal);
-			});
-		}));
-	});
+				return cache.put(requests[i], responseVal)
+			})
+		}))
+	})
 }
 
-var MATCH_PATH = /\/sandbox\/([a-fA-F0-9]{40})(?:\/([^\?]*))?(?:\?|$)/;
+var MATCH_PATH = /\/sandbox\/([a-fA-F0-9]{40})(?:\/([^\?]*))?(?:\?|$)/
 
 self.addEventListener('install', function (event) {
-	event.waitUntil(storeStatic());
-});
+	event.waitUntil(storeStatic())
+})
 
 self.addEventListener('fetch', function (event) {
-	var matches = MATCH_PATH.exec(event.request.url);
+	var matches = MATCH_PATH.exec(event.request.url)
 
 	if (event.request.method === 'GET') {
 		if (matches) {
-			var hash = matches[1];
-			var path = matches[2];
+			var hash = matches[1]
+			var path = matches[2]
 			event.respondWith(new Promise(function (resolve, reject) {
 				fetchFromTorrent(hash, path, function (err, response) {
 					if (err) {
-						reject(err);
+						reject(err)
 					} else {
 						resolve(new Response(new Blob([response.body]), {
 							status: 200,
@@ -51,106 +51,106 @@ self.addEventListener('fetch', function (event) {
 								'Content-Length': response.body.byteLength,
 								'Content-Security-Policy': 'sandbox allow-scripts allow-popups'
 							}
-						}));
+						}))
 					}
-				});
-			}));
+				})
+			}))
 		} else {
 			event.respondWith(caches.match(event.request).then(function (response) {
-				return response || fetch(event.request);
-			}));
+				return response || fetch(event.request)
+			}))
 			// Update the stored copy of the site after we load the main page
 			if (event.request.url === self.location.protocol + '//' + self.location.host + '/') {
 				storeStatic().catch(function (err) {
-					console.warn('Failed to update site');
-				});
+					console.warn('Failed to update site')
+				})
 			}
 		}
  	}
-});
+})
 
 // contain page id, port, requests
-var pipes = [];
-var outstandingRequests = {};
+var pipes = []
+var outstandingRequests = {}
 
 function fetchFromTorrent (hash, path, cb) {
-	var id = hash + '/' + path;
+	var id = hash + '/' + path
 	if (!outstandingRequests[id]) {
 		outstandingRequests[id] = {
 			hash: hash,
 			path: path,
 			callbacks: [],
 			requestedPage: null
-		};
+		}
 	}
-	outstandingRequests[id].callbacks.push(cb);
-	sendOutstanding();
-};
+	outstandingRequests[id].callbacks.push(cb)
+	sendOutstanding()
+}
 
 function setPipe (pageId, port) {
 	for (var i = 0; i < pipes.length; i++) {
-		var pipe = pipes[i];
+		var pipe = pipes[i]
 		if (pipe.pageId === pageId) {
-			pipes.splice(i, 1);
+			pipes.splice(i, 1)
 			// resend messages
 			Object.keys(outstandingRequests).forEach(function (id) {
-				var request = outstandingRequests[id];
+				var request = outstandingRequests[id]
 				if (request.requestedPage === pageId) {
-					request.requestedPage = null;
+					request.requestedPage = null
 				}
-			});
-			sendOutstanding();
-			break;
+			})
+			sendOutstanding()
+			break
 		}
 	}
 	if (port) {
 		pipes.push({
 			pageId: pageId,
 			port:port
-		});
-		sendOutstanding();
+		})
+		sendOutstanding()
 	}
-};
+}
 
 self.addEventListener('message', function (event) {
-	var data = event.data;
+	var data = event.data
 	switch(data.type) {
 		case 'returnpipe':
-			setPipe(data.pageId, event.ports[0]);
-			break;
+			setPipe(data.pageId, event.ports[0])
+			break
 		case 'response':
-			var id = data.hash  + '/' + data.path;
-			var entry = outstandingRequests[id];
+			var id = data.hash  + '/' + data.path
+			var entry = outstandingRequests[id]
 			if (entry) {
 				entry.callbacks.forEach(function (cb) {
-					var err = data.err ? new Error(data.err) : null;
-					cb(err, data.response);
-				});
-				delete outstandingRequests[id];
+					var err = data.err ? new Error(data.err) : null
+					cb(err, data.response)
+				})
+				delete outstandingRequests[id]
 			}
-			break;
+			break
 		case 'unload':
-			setPipe(data.pageId, null);
-			break;
+			setPipe(data.pageId, null)
+			break
 		default:
-			console.warn('Unexpected message:', event.data);
-			break;
+			console.warn('Unexpected message:', event.data)
+			break
 	}
-});
+})
 
 function sendOutstanding() {
-	var pipe = pipes[0];
+	var pipe = pipes[0]
 	if (pipe) {
 		Object.keys(outstandingRequests).forEach(function (id) {
-			var request = outstandingRequests[id];
+			var request = outstandingRequests[id]
 			if (!request.requestedPage) {
 				pipe.port.postMessage({
 					type: 'fetch',
 					hash: request.hash,
 					path: request.path
-				});
-				request.requestedPage = pipe.pageId;
+				})
+				request.requestedPage = pipe.pageId
 			}
-		});
+		})
 	}
 }
