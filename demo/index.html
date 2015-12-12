@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>PeerCloud free image gallery</title>
+	<script src="jquery-2.1.4.min.js"></script>
+	<script src="galleria/galleria-1.4.2.min.js"></script>
+	<style>
+		.gallery {
+			width: 100%;
+			height: 100vh;
+			background: #000;
+		}
+		.intro {
+			font-family: sans-serif;
+		}
+	</style>
+</head>
+<body>
+	<div class="intro">
+		<p> This is a simple image gallery hosted on PeerCloud. All images are licensed under the
+		Creative Commons CC0 license.</p>
+		<p> You can also find a copy of this example in the demo directory of the PeerCloud repo
+		<a href="https://github.com/jhiesey/peercloud">on GitHub</a>.</p>
+	</div>
+	<div class="gallery"></div>
+	<script>
+		var images = [
+			'bay-984189_1920.jpg',
+			'beach-1018290_1920.jpg',
+			'chapel-1071858_1920.jpg',
+			'chile-1053630_1920.jpg',
+			'dawn-1057446_1920.jpg',
+			'duck-1025142_1280.jpg',
+			'fox-1030885_1920.jpg',
+			'kingfisher-1068480_1920.jpg'
+		]
+		data = images.map(function (name) {
+			return {
+				image: 'images/' + name
+			}
+		})
+		Galleria.configure({
+
+		})
+		Galleria.loadTheme('galleria/themes/classic/galleria.classic.min.js')
+		Galleria.run('.gallery', {
+			dataSource: data
+		})
+	</script>
+</body>
+</html>
