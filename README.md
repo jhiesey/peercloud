@@ -59,6 +59,9 @@ since that wouldn't open the homepage as well. This can be fixed once Chrome imp
 serviceworkers, so if you want to see this fixed, you should
 [star this issue on the chromium bug tracker](https://code.google.com/p/chromium/issues/detail?id=302019).
 
+* Service workers only work over https (except on localhost), so if you want to set up a mirror you
+MUST get an SSL certificate and configure your server properly.
+
 * This is still very experimental! If you think you can help make it better, please send me a pull
 request.
 

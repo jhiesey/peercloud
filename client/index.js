@@ -173,7 +173,7 @@ function loadPage (loc) {
 	var matches = MATCH_PATH.exec(loc)
 	if (matches) {
 		var hash = matches[1]
-		var path = matches[2] || 'index.html'
+		var path = matches[2] || ''
 		var a = document.createElement('a')
 		a.target = '_blank'
 		a.href = '/sandbox/' + hash + '/' + path

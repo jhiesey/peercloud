@@ -6,7 +6,6 @@ var FILES = [
 'bundle.js',
 'main.css',
 'service-worker.js',
-'fakecookie.js',
 ''
 ]
 
@@ -40,7 +39,7 @@ self.addEventListener('fetch', function (event) {
 	if (event.request.method === 'GET') {
 		if (matches) {
 			var hash = matches[1]
-			var path = matches[2]
+			var path = matches[2] || 'index.html'
 			event.respondWith(new Promise(function (resolve, reject) {
 				fetchFromTorrent(hash, path, function (err, response) {
 					if (err) {
