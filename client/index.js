@@ -2,12 +2,13 @@ var debug = require('debug')('peercloud.io')
 var mime = require('mime')
 var Peer = require('simple-peer')
 var thunky = require('thunky')
+var toArrayBuffer = require('to-arraybuffer')
 var WebTorrent = require('webtorrent')
 var xhr = require('xhr')
 
 var TRACKER_URL = 'wss://tracker.webtorrent.io'
 
-global.WEBTORRENT_ANNOUNCE = [ TRACKER_URL ]
+global.WEBTORRENT_ANNOUNCE = [ 'wss://tracker.openwebtorrent.com', 'wss://tracker.btorrent.xyz', 'wss://tracker.fastcast.nz' ]
 
 if (!Peer.WEBRTC_SUPPORT || !navigator.serviceWorker) {
 	alert('This browser is unsupported. Please use a browser with WebRTC support and ServiceWorker support.')
@@ -53,7 +54,7 @@ function fetchFileFromTorrent(torrent, path, cb) {
 		if (file.path === torrent.name + '/' + path) {
 			file.getBuffer(function (err, buffer) {
 				if (err) return cb(err);
-				cb(null, buffer.toArrayBuffer());
+				cb(null, toArrayBuffer(buffer));
 			});
 			return;
 		}
@@ -141,7 +142,7 @@ navigator.serviceWorker.register('/service-worker.js').then(function (registrati
 					if (!err) {
 						msg.response = {
 							body: buffer,
-							mime: mime.lookup(data.path)
+							mime: mime.getType(data.path)
 						}
 					} else {
 						msg.err = err.message
@@ -197,7 +198,11 @@ var getClient = thunky(function (cb) {
 			}
 			debug('got rtc config: %o', rtcConfig)
 		}
-		var client = new WebTorrent({ rtcConfig: rtcConfig })
+		var client = new WebTorrent({
+			tracker: {
+				rtcConfig
+			}
+		})
 		client.on('warning', console.warn)
 		client.on('error', console.error)
 		cb(null, client)

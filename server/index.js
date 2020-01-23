@@ -2,7 +2,7 @@ var compress = require('compression')
 var debug = require('debug')('peercloud')
 var express = require('express')
 var http = require('http')
-var jade = require('jade')
+var pug = require('pug')
 var path = require('path')
 var url = require('url')
 var twilio = require('twilio')
@@ -15,9 +15,8 @@ var httpServer = http.createServer(app)
 
 // Templating
 app.set('views', __dirname + '/views')
-app.set('view engine', 'jade')
+app.set('view engine', 'pug')
 app.set('x-powered-by', false)
-app.engine('jade', jade.renderFile)
 
 app.use(compress())
 
@@ -56,18 +55,18 @@ app.get('/', function (req, res) {
   res.render('index')
 })
 
-// Fetch new ice_servers from twilio token regularly
+// Fetch new iceServers from twilio token regularly
 var iceServers
 var twilioClient = twilio(secret.twilio.accountSid, secret.twilio.authToken)
 
 function updateIceServers () {
   twilioClient.tokens.create({}, function (err, token) {
     if (err) return error(err)
-    if (!token.ice_servers) {
-      return error(new Error('twilio response ' + token + ' missing ice_servers'))
+    if (!token.iceServers) {
+      return error(new Error('twilio response ' + token + ' missing iceServers'))
     }
 
-    iceServers = token.ice_servers
+    iceServers = token.iceServers
       .filter(function (server) {
         var urls = server.urls || server.url
         return urls && !/^stun:/.test(urls)

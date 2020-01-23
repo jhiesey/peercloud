@@ -1,3 +1,3 @@
 exports.ports = {
-  http: 9200
+  http: 9100
 }
